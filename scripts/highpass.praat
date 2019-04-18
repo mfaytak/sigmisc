@@ -4,7 +4,8 @@
 # Writes results to a textfile.
 # Christian DiCanio, 2007 - revised 2008 to include output amplitude values.
 # Revised in 2012 to work iteratively across a directory.
-# Modified again in 2017 and 2018 by Matt Faytak to incorporate filtering and 
+# Modified again in 2017 and 2018 by Matt Faytak to add high-pass filter and
+# calculate intensity and harmonicity (HNR).
 
 form Extract Formant data from labelled points
 	sentence Directory_name: SUZHOU_40_FA\sauce\
