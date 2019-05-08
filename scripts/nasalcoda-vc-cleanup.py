@@ -122,10 +122,15 @@ for wave_file in glob.glob(glob_regexp):
 		continue
 
 	print("Now working on {} {}".format(stim,acq))
-	start = vc[0].t1
+
+	start_nonzc = vc[0].t1 
 	vowel_end = vc[0].t2
-	end = vc[1].t2
-	
+    	end_nonzc = vc[1].t2
+    
+    	# move timepoints to nearest zero crossings
+    	start = sound.get_nearest_zero_crossing(start_nonzc)
+    	end = sound.get_nearest_zero_crossing(end_nonzc)
+
 	# extract the content of the two intervals and scale intensity
 	sub = sound.extract_part(from_time = start, to_time = end)
 	sub.scale_intensity(70.)
