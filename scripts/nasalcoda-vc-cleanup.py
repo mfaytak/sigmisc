@@ -15,7 +15,7 @@ Usage: python nasalcoda-vc-cleanup.py [expdir] [words] [segments] [speaker]
   words: list of target words, plaintext
   segments: list of target segments, plaintext (including suprasegmentals) 
   speaker: characteristics of the voice for formant extraction: must be:
-    male, female, or child
+	male, female, or child
 TODO: add vowel argument?
 '''
 
@@ -125,11 +125,11 @@ for wave_file in glob.glob(glob_regexp):
 
 	start_nonzc = vc[0].t1 
 	vowel_end = vc[0].t2
-    	end_nonzc = vc[1].t2
-    
-    	# move timepoints to nearest zero crossings
-    	start = sound.get_nearest_zero_crossing(start_nonzc)
-    	end = sound.get_nearest_zero_crossing(end_nonzc)
+	end_nonzc = vc[1].t2
+	
+	# move timepoints to nearest zero crossings
+	start = sound.get_nearest_zero_crossing(start_nonzc)
+	end = sound.get_nearest_zero_crossing(end_nonzc)
 
 	# extract the content of the two intervals and scale intensity
 	sub = sound.extract_part(from_time = start, to_time = end)
