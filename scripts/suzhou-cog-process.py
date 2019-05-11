@@ -39,9 +39,9 @@ except IndexError:
 subj = str("S" + re.sub("[^0-9]", "", expdir))
 glob_regexp = os.path.join(expdir,"*","*.ch1.wav")
 
-acoustic_file = os.path.join(expdir, str(subj + "_cogs.txt"))
+acoustic_file = os.path.join("cogs_out", str(subj + "_cogs.txt"))
 with open(acoustic_file,'w') as out:
-	out.write("\t".join(["subj","acq","stim","pron","phone","cog","cog3k","cog4k","cog5k"]) + "\n")
+	out.write("\t".join(["subj","acq","stim","pron","phone","coart_class","round_class","cog","cog075k","cog2k","cog3k","cog4k","cog5k"]) + "\n")
 
 skip_set = ["bolus", "practice", "bite", 
 			"BAAE", "AAE", "BUW", "UW", "BIY", "IY", "EU", "FUH", "BUH", "AHR"]
@@ -54,15 +54,21 @@ target_list = ['IZ', 'BIZX', 'SIZ', 'XIZ',
 iz_list = ['IZ', 'BIZX', 'SIZ', 'XIZ']
 target_segments = ['IY1',  'IH1', 'S', 'SH']
 
+no_coart_words = ["IZ", "BIZX", "YZ"]
+coart_words = ['SIZ', 'XIZ', 'XYZ']
+round_words = ['YZ', 'XYZ', 'XEU', 'SUW', 'XUEQ', "SOOW", "SZW"]
+
 for wave_file in glob.glob(glob_regexp):
+	#print(wave_file)
 	parent = os.path.dirname(wave_file)
 	# skip over other acoustics folders
 	if parent.endswith("sauce"):
-		print("Skipping sauce")
+		#print("Skipping sauce")
 		continue
 	# skip landmark/practice trials
 	stimfile = os.path.join(parent,"stim.txt")
 	stim = read_stimfile(stimfile)
+	#print(stim)
 
 	if stim in skip_set:
 		continue
@@ -97,17 +103,38 @@ for wave_file in glob.glob(glob_regexp):
 		else:
 			continue
 			
-		if f.text not in ["IZ1","YZ1","SH","S","ZZ1","ZW1"]:
+		if f.text not in ["IZ1", "YZ1", "SH", "S", "ZZ1", "ZW1"]:
 			continue
 
-		print(acq, '\t', stim, '\t', 'Analyzing a {}'.format(f.text))
+		if f.text in ["IZ1", "YZ1"]:
+			if pron in no_coart_words:
+				coart_class = "no_fric"
+			elif pron in coart_words:
+				coart_class = "fric"
+		else:
+			coart_class = "NA"
+			
+		if pron in round_words:
+			round_class = "rounded"
+		else:
+			round_class = "unrounded"
+			
+		print(acq, '\t', stim, '\t', 'Analyzing a {}, {}'.format(f.text, coart_class))
 
 		# do the Parselmouth stuff on middle third of selected file
 		wv = parselmouth.Sound(wave_file)
+		wv = wv.resample(44100)
+
 		thirds = linspace(f.t1, f.t2, 4)
 		sub = wv.extract_part(from_time = thirds[1], to_time = thirds[2], preserve_times=True) 
 		cog = sub.to_spectrum().get_centre_of_gravity()
 		
+		filt_075k = parselmouth.praat.call(sub, "Filter (stop Hann band)", 0, 750, 100)
+		cog_075k = filt_075k.to_spectrum().get_centre_of_gravity()
+
+		filt_2k = parselmouth.praat.call(sub, "Filter (stop Hann band)", 0, 2000, 100)
+		cog_2k = filt_2k.to_spectrum().get_centre_of_gravity()  
+
 		filt_3k = parselmouth.praat.call(sub, "Filter (stop Hann band)", 0, 3000, 100)
 		cog_3k = filt_3k.to_spectrum().get_centre_of_gravity()    
 		
@@ -118,8 +145,8 @@ for wave_file in glob.glob(glob_regexp):
 		cog_5k = filt_5k.to_spectrum().get_centre_of_gravity()
 		
 		# output the data in tabular format
-		vals= '\t'.join([str(round(m,4)) for m in [cog, cog_3k, cog_4k, cog_5k]])
-		out_row = '\t'.join([subj, acq, stim, pron, f.text, vals])
+		vals= '\t'.join([str(round(m,4)) for m in [cog, cog_075k, cog_2k, cog_3k, cog_4k, cog_5k]])
+		out_row = '\t'.join([subj, acq, stim, pron, f.text, coart_class, round_class, vals])
 		# ('before', before),
 		# ('after', after),
 		with open(acoustic_file, 'a') as out:

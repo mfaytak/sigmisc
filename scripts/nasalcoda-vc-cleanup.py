@@ -86,6 +86,9 @@ acoustic_file = os.path.join(expdir, str(subj + "_formants.txt"))
 with open(acoustic_file,'w') as out:
 	out.write("\t".join(["subj","acq","stim","vowel","nasal","midF1","endF1","midF2","endF2","midF3","endF3"]) + "\n")
 
+# synthesize 20ms of silence to add to onset of stimulus
+sil = parselmouth.praat.call("Create Sound from formula", "silence", 1, 0, 0.02, 44100, "0")
+
 for wave_file in glob.glob(glob_regexp):
 	parent = os.path.dirname(wave_file)
 	condition = os.path.dirname(parent)
@@ -102,6 +105,8 @@ for wave_file in glob.glob(glob_regexp):
 	tg = audiolabel.LabelManager(from_file=tg_handle,from_type='praat')
 
 	sound = parselmouth.Sound(wave_file)
+	sound = sound.resample(44100)
+	
 	matches = tg.tier('words').search(word_regexp)
 	if len(matches) > 1:
 		print("Multiple tokens of {} in {}, skipping!".format(stim, acq))
@@ -132,13 +137,15 @@ for wave_file in glob.glob(glob_regexp):
 	end = sound.get_nearest_zero_crossing(end_nonzc)
 
 	# extract the content of the two intervals and scale intensity
+	# then pad with silence
 	sub = sound.extract_part(from_time = start, to_time = end)
 	sub.scale_intensity(70.)
+	sub_padded = sil.concatenate([sil, sub])
 	
 	# save the sound file as a stimulus file
 	out_handle = "_".join([subj,stim,acq]) + ".wav"
 	out_path = os.path.join(condition, out_handle)
-	sub.save(out_path, "WAV")
+	sub_padded.save(out_path, "WAV")
 	
 	# get IFC object from start to VOWEL's end
 	proc = subprocess.Popen(ifc_args + [out_path])
